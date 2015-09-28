@@ -19,7 +19,7 @@ end
 class Isucon5::WebApp < Sinatra::Base
   use Rack::Session::Cookie
   set :erb, escape_html: true
-  set :public_folder, File.expand_path('../../static', __FILE__)
+  set :public_folder, File.expand_path('../static', __FILE__)
   #set :sessions, true
   set :session_secret, ENV['ISUCON5_SESSION_SECRET'] || 'beermoris'
   set :protection, true
