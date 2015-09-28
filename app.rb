@@ -26,6 +26,18 @@ class Isucon5::WebApp < Sinatra::Base
 
   helpers do
     def config
+      if database_url = ENV['CLEARDB_DATABASE_URL']
+        uri = URI(database_url)
+        @config ||= {
+          db: {
+            host: uri.host,
+            port: uri.port || 3306,
+            username: uri.user,
+            password: uri.password,
+            database: uri.path[1..-1]
+          }
+        }
+      end
       @config ||= {
         db: {
           host: ENV['ISUCON5_DB_HOST'] || 'localhost',
