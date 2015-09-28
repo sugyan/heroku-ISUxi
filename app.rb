@@ -372,6 +372,14 @@ SQL
   end
 
   get '/initialize' do
+    schema = File.expand_path('../sql/schema.sql', __FILE__)
+    File.open(schema) do |file|
+      file.read.split(/;/).each do |sql|
+        if not sql.strip.empty?
+          db.query(sql)
+        end
+      end
+    end
     db.query("DELETE FROM relations WHERE id > 500000")
     db.query("DELETE FROM footprints WHERE id > 500000")
     db.query("DELETE FROM entries WHERE id > 500000")
