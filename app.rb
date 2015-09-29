@@ -1,8 +1,6 @@
 require 'sinatra/base'
 require 'mysql2'
 require 'mysql2-cs-bind'
-require 'tilt/erubis'
-require 'erubis'
 
 module Isucon5
   class AuthenticationError < StandardError; end
@@ -146,15 +144,15 @@ SQL
 
   error Isucon5::AuthenticationError do
     session[:user_id] = nil
-    halt 401, erubis(:login, layout: false, locals: { message: 'ログインに失敗しました' })
+    halt 401, erb(:login, layout: false, locals: { message: 'ログインに失敗しました' })
   end
 
   error Isucon5::PermissionDenied do
-    halt 403, erubis(:error, locals: { message: '友人のみしかアクセスできません' })
+    halt 403, erb(:error, locals: { message: '友人のみしかアクセスできません' })
   end
 
   error Isucon5::ContentNotFound do
-    halt 404, erubis(:error, locals: { message: '要求されたコンテンツは存在しません' })
+    halt 404, erb(:error, locals: { message: '要求されたコンテンツは存在しません' })
   end
 
   get '/login' do
@@ -170,6 +168,24 @@ SQL
   get '/logout' do
     session[:user_id] = nil
     session.clear
+    redirect '/login'
+  end
+
+  get '/signup' do
+    erb :signup
+  end
+
+  post '/signup' do
+    if params['email'].empty? || params['password'].empty? || params['account_name'].empty? || params['nick_name'].empty?
+      halt 400, erb(:error, locals: { message: '入力が不正です' })
+    end
+    cnt = db.xquery('SELECT COUNT(1) AS cnt FROM users WHERE account_name = ?', params['account_name']).first[:cnt]
+    if cnt.to_i > 0
+      halt 400, erb(:error, locals: { message: 'アカウント名が既に存在しています' })
+    end
+    salt = SecureRandom.hex(3)
+    db.xquery('INSERT INTO users (email, nick_name, account_name, passhash) VALUES (?, ?, ?, SHA2(CONCAT(?, ?), 512))', params['email'], params['nick_name'], params['account_name'], params['password'], salt)
+    db.xquery('INSERT INTO salts (user_id, salt) VALUES (?, ?)', db.last_id, salt)
     redirect '/login'
   end
 
