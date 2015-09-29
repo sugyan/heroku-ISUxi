@@ -48,7 +48,6 @@ class Isucon5::WebApp < Sinatra::Base
     end
 
     def db
-      return Thread.current[:isucon5_db] if Thread.current[:isucon5_db]
       client = Mysql2::Client.new(
         host: config[:db][:host],
         port: config[:db][:port],
@@ -58,7 +57,6 @@ class Isucon5::WebApp < Sinatra::Base
         reconnect: true,
       )
       client.query_options.merge!(symbolize_keys: true)
-      Thread.current[:isucon5_db] = client
       client
     end
 
@@ -400,5 +398,9 @@ SQL
     db.query("DELETE FROM footprints WHERE id > 500000")
     db.query("DELETE FROM entries WHERE id > 500000")
     db.query("DELETE FROM comments WHERE id > 1500000")
+  end
+
+  after do
+    db.close
   end
 end
